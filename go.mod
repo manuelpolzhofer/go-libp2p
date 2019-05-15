@@ -11,21 +11,21 @@ require (
 	github.com/jbenet/go-temp-err-catcher v0.0.0-20150120210811-aac704a3f4f2 // indirect
 	github.com/jbenet/goprocess v0.0.0-20160826012719-b497e2f366b8
 	github.com/libp2p/go-addr-util v0.0.1 // indirect
-	github.com/libp2p/go-flow-metrics v0.0.1 // indirect
-	github.com/libp2p/go-libp2p-core v0.0.0-20190417162149-f41b5dd7c01b
-	github.com/libp2p/go-libp2p-crypto v0.0.1
-	github.com/libp2p/go-libp2p-host v0.0.3-0.20190417163130-3dbb8ff97068
-	github.com/libp2p/go-libp2p-interface-connmgr v0.0.4-0.20190417163148-042f06a9d500
-	github.com/libp2p/go-libp2p-interface-pnet v0.0.1
+	github.com/libp2p/go-conn-security v0.0.0-20190508145339-26d02f699501 // indirect
+	github.com/libp2p/go-libp2p-core v0.0.0-20190508144953-ed42958fbb3a
+	github.com/libp2p/go-libp2p-crypto v0.0.2-0.20190508145442-f62b66bf1822
+	github.com/libp2p/go-libp2p-host v0.0.3-0.20190508145542-8c0d75f3112e
+	github.com/libp2p/go-libp2p-interface-connmgr v0.0.4-0.20190508151628-841ad5754833
+	github.com/libp2p/go-libp2p-interface-pnet v0.0.0-20190508152227-56b4f233cfb9
 	github.com/libp2p/go-libp2p-loggables v0.0.1
 	github.com/libp2p/go-libp2p-nat v0.0.3
-	github.com/libp2p/go-libp2p-net v0.0.3-0.20190417163222-435e3f738c44
+	github.com/libp2p/go-libp2p-net v0.0.3-0.20190508151328-909ceb946b91
 	github.com/libp2p/go-libp2p-netutil v0.0.1
-	github.com/libp2p/go-libp2p-peer v0.1.1-0.20190417163254-bc123512eacd
-	github.com/libp2p/go-libp2p-peerstore v0.0.3-0.20190417163308-393cab16de63
-	github.com/libp2p/go-libp2p-protocol v0.0.0-20190417164323-90214444c101 // indirect
-	github.com/libp2p/go-libp2p-routing v0.0.1
-	github.com/libp2p/go-libp2p-transport v0.0.5-0.20190417163604-3e2e98c6fda1
+	github.com/libp2p/go-libp2p-peer v0.1.1-0.20190508150805-f8c2bca13903
+	github.com/libp2p/go-libp2p-peerstore v0.0.3-0.20190508150704-d002685ab368
+	github.com/libp2p/go-libp2p-protocol v0.0.0-20190508150539-edd0637e4c73 // indirect
+	github.com/libp2p/go-libp2p-routing v0.0.0-20190508151154-eaba2d79950d
+	github.com/libp2p/go-libp2p-transport v0.0.5-0.20190508145638-344fd30bab56
 	github.com/libp2p/go-maddr-filter v0.0.1
 	github.com/libp2p/go-mplex v0.0.1 // indirect
 	github.com/libp2p/go-msgio v0.0.1 // indirect
