@@ -1,13 +1,17 @@
 module github.com/libp2p/go-libp2p
 
 require (
+	github.com/glycerine/goconvey v0.0.0-20190410193231-58a59202ab31 // indirect
+	github.com/glycerine/rbuf v0.0.0-20190314090850-75b78581bebe
 	github.com/gogo/protobuf v1.2.1
+	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
 	github.com/ipfs/go-cid v0.0.1
 	github.com/ipfs/go-detect-race v0.0.1
 	github.com/ipfs/go-ipfs-util v0.0.1
 	github.com/ipfs/go-log v0.0.1
 	github.com/jbenet/go-cienv v0.1.0
 	github.com/jbenet/goprocess v0.1.3
+	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/libp2p/go-conn-security v0.0.1
 	github.com/libp2p/go-conn-security-multistream v0.0.2
 	github.com/libp2p/go-libp2p-autonat v0.0.4
