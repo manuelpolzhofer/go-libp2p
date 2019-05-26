@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+
 	swarmt "github.com/libp2p/go-libp2p-swarm/testing"
 	bhost "github.com/libp2p/go-libp2p/p2p/host/basic"
 	ping "github.com/libp2p/go-libp2p/p2p/protocol/ping"
@@ -18,7 +18,7 @@ func TestPing(t *testing.T) {
 	h1 := bhost.New(swarmt.GenSwarm(t, ctx))
 	h2 := bhost.New(swarmt.GenSwarm(t, ctx))
 
-	err := h1.Connect(ctx, pstore.PeerInfo{
+	err := h1.Connect(ctx, peer.AddrInfo{
 		ID:    h2.ID(),
 		Addrs: h2.Addrs(),
 	})

@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	logging "github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+
+	logging "github.com/ipfs/go-log"
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
 	"github.com/whyrusleeping/mdns"
@@ -33,7 +33,7 @@ type Service interface {
 }
 
 type Notifee interface {
-	HandlePeerFound(pstore.PeerInfo)
+	HandlePeerFound(peer.AddrInfo)
 }
 
 type mdnsService struct {
@@ -173,7 +173,7 @@ func (m *mdnsService) handleEntry(e *mdns.ServiceEntry) {
 		return
 	}
 
-	pi := pstore.PeerInfo{
+	pi := peer.AddrInfo{
 		ID:    mpeer,
 		Addrs: []ma.Multiaddr{maddr},
 	}

@@ -7,15 +7,15 @@ import (
 	"sync"
 	"time"
 
-	basic "github.com/libp2p/go-libp2p/p2p/host/basic"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/routing"
 
 	autonat "github.com/libp2p/go-libp2p-autonat"
 	_ "github.com/libp2p/go-libp2p-circuit"
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/peer"
 	discovery "github.com/libp2p/go-libp2p-discovery"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
-	routing "github.com/libp2p/go-libp2p-routing"
+	basic "github.com/libp2p/go-libp2p/p2p/host/basic"
+
 	ma "github.com/multiformats/go-multiaddr"
 	manet "github.com/multiformats/go-multiaddr-net"
 )
@@ -188,7 +188,7 @@ func (ar *AutoRelay) usingRelay(p peer.ID) bool {
 
 // addRelay adds the given relay to our set of relays.
 // returns true when we add a new relay
-func (ar *AutoRelay) tryRelay(ctx context.Context, pi pstore.PeerInfo) bool {
+func (ar *AutoRelay) tryRelay(ctx context.Context, pi peer.AddrInfo) bool {
 	if ar.usingRelay(pi.ID) {
 		return false
 	}
@@ -209,7 +209,7 @@ func (ar *AutoRelay) tryRelay(ctx context.Context, pi pstore.PeerInfo) bool {
 	return true
 }
 
-func (ar *AutoRelay) connect(ctx context.Context, pi pstore.PeerInfo) bool {
+func (ar *AutoRelay) connect(ctx context.Context, pi peer.AddrInfo) bool {
 	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
@@ -233,13 +233,13 @@ func (ar *AutoRelay) connect(ctx context.Context, pi pstore.PeerInfo) bool {
 	return true
 }
 
-func (ar *AutoRelay) discoverRelays(ctx context.Context) ([]pstore.PeerInfo, error) {
+func (ar *AutoRelay) discoverRelays(ctx context.Context) ([]peer.AddrInfo, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	return discovery.FindPeers(ctx, ar.discover, RelayRendezvous, discovery.Limit(1000))
 }
 
-func (ar *AutoRelay) selectRelays(ctx context.Context, pis []pstore.PeerInfo) []pstore.PeerInfo {
+func (ar *AutoRelay) selectRelays(ctx context.Context, pis []peer.AddrInfo) []peer.AddrInfo {
 	// TODO better relay selection strategy; this just selects random relays
 	//      but we should probably use ping latency as the selection metric
 
@@ -296,7 +296,7 @@ func (ar *AutoRelay) relayAddrs(addrs []ma.Multiaddr) []ma.Multiaddr {
 	return raddrs
 }
 
-func shuffleRelays(pis []pstore.PeerInfo) {
+func shuffleRelays(pis []peer.AddrInfo) {
 	for i := range pis {
 		j := rand.Intn(i + 1)
 		pis[i], pis[j] = pis[j], pis[i]

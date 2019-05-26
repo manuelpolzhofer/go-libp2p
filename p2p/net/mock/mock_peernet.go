@@ -6,11 +6,13 @@ import (
 	"math/rand"
 	"sync"
 
-	"github.com/jbenet/goprocess"
-	goprocessctx "github.com/jbenet/goprocess/context"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+	"github.com/libp2p/go-libp2p-core/peerstore"
+
+	"github.com/jbenet/goprocess"
+	goprocessctx "github.com/jbenet/goprocess/context"
+
 	ma "github.com/multiformats/go-multiaddr"
 )
 
@@ -19,7 +21,7 @@ type peernet struct {
 	mocknet *mocknet // parent
 
 	peer peer.ID
-	ps   pstore.Peerstore
+	ps   peerstore.Peerstore
 
 	// conns are actual live connections between peers.
 	// many conns could run over each link.
@@ -39,7 +41,7 @@ type peernet struct {
 }
 
 // newPeernet constructs a new peernet
-func newPeernet(ctx context.Context, m *mocknet, p peer.ID, ps pstore.Peerstore) (*peernet, error) {
+func newPeernet(ctx context.Context, m *mocknet, p peer.ID, ps peerstore.Peerstore) (*peernet, error) {
 
 	n := &peernet{
 		mocknet: m,
@@ -83,7 +85,7 @@ func (pn *peernet) Close() error {
 	return pn.proc.Close()
 }
 
-func (pn *peernet) Peerstore() pstore.Peerstore {
+func (pn *peernet) Peerstore() peerstore.Peerstore {
 	return pn.ps
 }
 
@@ -298,7 +300,7 @@ func (pn *peernet) BandwidthTotals() (in uint64, out uint64) {
 
 // Listen tells the network to start listening on given multiaddrs.
 func (pn *peernet) Listen(addrs ...ma.Multiaddr) error {
-	pn.Peerstore().AddAddrs(pn.LocalPeer(), addrs, pstore.PermanentAddrTTL)
+	pn.Peerstore().AddAddrs(pn.LocalPeer(), addrs, peerstore.PermanentAddrTTL)
 	return nil
 }
 

@@ -4,24 +4,26 @@ import (
 	"context"
 	"fmt"
 
-	bhost "github.com/libp2p/go-libp2p/p2p/host/basic"
-	relay "github.com/libp2p/go-libp2p/p2p/host/relay"
-	routed "github.com/libp2p/go-libp2p/p2p/host/routed"
-
-	logging "github.com/ipfs/go-log"
-	circuit "github.com/libp2p/go-libp2p-circuit"
-	connmgr "github.com/libp2p/go-libp2p-core/connmgr"
-	crypto "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/connmgr"
+	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/metrics"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
-	pnet "github.com/libp2p/go-libp2p-core/pnet"
+	"github.com/libp2p/go-libp2p-core/peerstore"
+	"github.com/libp2p/go-libp2p-core/pnet"
+	"github.com/libp2p/go-libp2p-core/routing"
+
+	bhost "github.com/libp2p/go-libp2p/p2p/host/basic"
+	relay "github.com/libp2p/go-libp2p/p2p/host/relay"
+	routed "github.com/libp2p/go-libp2p/p2p/host/routed"
+
+	circuit "github.com/libp2p/go-libp2p-circuit"
 	discovery "github.com/libp2p/go-libp2p-discovery"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
-	routing "github.com/libp2p/go-libp2p-routing"
 	swarm "github.com/libp2p/go-libp2p-swarm"
 	tptu "github.com/libp2p/go-libp2p-transport-upgrader"
+
+	logging "github.com/ipfs/go-log"
 	filter "github.com/libp2p/go-maddr-filter"
 	ma "github.com/multiformats/go-multiaddr"
 )
@@ -60,7 +62,7 @@ type Config struct {
 
 	ConnManager connmgr.ConnManager
 	NATManager  NATManagerC
-	Peerstore   pstore.Peerstore
+	Peerstore   peerstore.Peerstore
 	Reporter    metrics.Reporter
 
 	DisablePing bool

@@ -7,16 +7,18 @@ import (
 	"sort"
 	"sync"
 
+	ic "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peerstore"
+
 	bhost "github.com/libp2p/go-libp2p/p2p/host/basic"
 
 	"github.com/jbenet/goprocess"
 	goprocessctx "github.com/jbenet/goprocess/context"
-	ic "github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/peer"
+
 	p2putil "github.com/libp2p/go-libp2p-netutil"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
 	pstoremem "github.com/libp2p/go-libp2p-peerstore/pstoremem"
 	ma "github.com/multiformats/go-multiaddr"
 )
@@ -88,14 +90,14 @@ func (mn *mocknet) AddPeer(k ic.PrivKey, a ma.Multiaddr) (host.Host, error) {
 	}
 
 	ps := pstoremem.NewPeerstore()
-	ps.AddAddr(p, a, pstore.PermanentAddrTTL)
+	ps.AddAddr(p, a, peerstore.PermanentAddrTTL)
 	ps.AddPrivKey(p, k)
 	ps.AddPubKey(p, k.GetPublic())
 
 	return mn.AddPeerWithPeerstore(p, ps)
 }
 
-func (mn *mocknet) AddPeerWithPeerstore(p peer.ID, ps pstore.Peerstore) (host.Host, error) {
+func (mn *mocknet) AddPeerWithPeerstore(p peer.ID, ps peerstore.Peerstore) (host.Host, error) {
 	n, err := newPeernet(mn.ctx, mn, p, ps)
 	if err != nil {
 		return nil, err

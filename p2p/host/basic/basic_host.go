@@ -7,17 +7,19 @@ import (
 	"sync"
 	"time"
 
-	logging "github.com/ipfs/go-log"
-	goprocess "github.com/jbenet/goprocess"
-	goprocessctx "github.com/jbenet/goprocess/context"
-	connmgr "github.com/libp2p/go-libp2p-core/connmgr"
+	"github.com/libp2p/go-libp2p-core/connmgr"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
-	proto "github.com/libp2p/go-libp2p-core/protocol"
+
+	logging "github.com/ipfs/go-log"
+	goprocess "github.com/jbenet/goprocess"
+	goprocessctx "github.com/jbenet/goprocess/context"
+
 	inat "github.com/libp2p/go-libp2p-nat"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+
 	identify "github.com/libp2p/go-libp2p/p2p/protocol/identify"
 	ping "github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	ma "github.com/multiformats/go-multiaddr"
@@ -274,7 +276,7 @@ func (h *BasicHost) newStreamHandler(s network.Stream) {
 		}
 	}
 
-	s.SetProtocol(proto.ID(protoID))
+	s.SetProtocol(protocol.ID(protoID))
 	log.Debugf("protocol negotiation took %s", took)
 
 	go handle(protoID, s)
@@ -348,7 +350,7 @@ func (h *BasicHost) ID() peer.ID {
 }
 
 // Peerstore returns the Host's repository of Peer Addresses and Keys.
-func (h *BasicHost) Peerstore() pstore.Peerstore {
+func (h *BasicHost) Peerstore() peerstore.Peerstore {
 	return h.Network().Peerstore()
 }
 
@@ -371,10 +373,10 @@ func (h *BasicHost) IDService() *identify.IDService {
 // This is equivalent to:
 //   host.Mux().SetHandler(proto, handler)
 // (Threadsafe)
-func (h *BasicHost) SetStreamHandler(pid proto.ID, handler network.StreamHandler) {
+func (h *BasicHost) SetStreamHandler(pid protocol.ID, handler network.StreamHandler) {
 	h.Mux().AddHandler(string(pid), func(p string, rwc io.ReadWriteCloser) error {
 		is := rwc.(network.Stream)
-		is.SetProtocol(proto.ID(p))
+		is.SetProtocol(protocol.ID(p))
 		handler(is)
 		return nil
 	})
@@ -382,25 +384,25 @@ func (h *BasicHost) SetStreamHandler(pid proto.ID, handler network.StreamHandler
 
 // SetStreamHandlerMatch sets the protocol handler on the Host's Mux
 // using a matching function to do protocol comparisons
-func (h *BasicHost) SetStreamHandlerMatch(pid proto.ID, m func(string) bool, handler network.StreamHandler) {
+func (h *BasicHost) SetStreamHandlerMatch(pid protocol.ID, m func(string) bool, handler network.StreamHandler) {
 	h.Mux().AddHandlerWithFunc(string(pid), m, func(p string, rwc io.ReadWriteCloser) error {
 		is := rwc.(network.Stream)
-		is.SetProtocol(proto.ID(p))
+		is.SetProtocol(protocol.ID(p))
 		handler(is)
 		return nil
 	})
 }
 
 // RemoveStreamHandler returns ..
-func (h *BasicHost) RemoveStreamHandler(pid proto.ID) {
+func (h *BasicHost) RemoveStreamHandler(pid protocol.ID) {
 	h.Mux().RemoveHandler(string(pid))
 }
 
 // NewStream opens a new stream to given peer p, and writes a p2p/protocol
-// header with given proto.ID. If there is no connection to p, attempts
+// header with given protocol.ID. If there is no connection to p, attempts
 // to create one. If ProtocolID is "", writes no header.
 // (Threadsafe)
-func (h *BasicHost) NewStream(ctx context.Context, p peer.ID, pids ...proto.ID) (network.Stream, error) {
+func (h *BasicHost) NewStream(ctx context.Context, p peer.ID, pids ...protocol.ID) (network.Stream, error) {
 	pref, err := h.preferredProtocol(p, pids)
 	if err != nil {
 		return nil, err
@@ -425,14 +427,14 @@ func (h *BasicHost) NewStream(ctx context.Context, p peer.ID, pids ...proto.ID) 
 		s.Reset()
 		return nil, err
 	}
-	selpid := proto.ID(selected)
+	selpid := protocol.ID(selected)
 	s.SetProtocol(selpid)
 	h.Peerstore().AddProtocols(p, selected)
 
 	return s, nil
 }
 
-func pidsToStrings(pids []proto.ID) []string {
+func pidsToStrings(pids []protocol.ID) []string {
 	out := make([]string, len(pids))
 	for i, p := range pids {
 		out[i] = string(p)
@@ -440,21 +442,21 @@ func pidsToStrings(pids []proto.ID) []string {
 	return out
 }
 
-func (h *BasicHost) preferredProtocol(p peer.ID, pids []proto.ID) (proto.ID, error) {
+func (h *BasicHost) preferredProtocol(p peer.ID, pids []protocol.ID) (protocol.ID, error) {
 	pidstrs := pidsToStrings(pids)
 	supported, err := h.Peerstore().SupportsProtocols(p, pidstrs...)
 	if err != nil {
 		return "", err
 	}
 
-	var out proto.ID
+	var out protocol.ID
 	if len(supported) > 0 {
-		out = proto.ID(supported[0])
+		out = protocol.ID(supported[0])
 	}
 	return out, nil
 }
 
-func (h *BasicHost) newStream(ctx context.Context, p peer.ID, pid proto.ID) (network.Stream, error) {
+func (h *BasicHost) newStream(ctx context.Context, p peer.ID, pid protocol.ID) (network.Stream, error) {
 	s, err := h.Network().NewStream(ctx, p)
 	if err != nil {
 		return nil, err
@@ -474,9 +476,9 @@ func (h *BasicHost) newStream(ctx context.Context, p peer.ID, pid proto.ID) (net
 // h.Network.Dial, and block until a connection is open, or an error is returned.
 // Connect will absorb the addresses in pi into its internal peerstore.
 // It will also resolve any /dns4, /dns6, and /dnsaddr addresses.
-func (h *BasicHost) Connect(ctx context.Context, pi pstore.PeerInfo) error {
+func (h *BasicHost) Connect(ctx context.Context, pi peer.AddrInfo) error {
 	// absorb addresses into peerstore
-	h.Peerstore().AddAddrs(pi.ID, pi.Addrs, pstore.TempAddrTTL)
+	h.Peerstore().AddAddrs(pi.ID, pi.Addrs, peerstore.TempAddrTTL)
 
 	if h.Network().Connectedness(pi.ID) == network.Connected {
 		return nil
@@ -486,12 +488,12 @@ func (h *BasicHost) Connect(ctx context.Context, pi pstore.PeerInfo) error {
 	if err != nil {
 		return err
 	}
-	h.Peerstore().AddAddrs(pi.ID, resolved, pstore.TempAddrTTL)
+	h.Peerstore().AddAddrs(pi.ID, resolved, peerstore.TempAddrTTL)
 
 	return h.dialPeer(ctx, pi.ID)
 }
 
-func (h *BasicHost) resolveAddrs(ctx context.Context, pi pstore.PeerInfo) ([]ma.Multiaddr, error) {
+func (h *BasicHost) resolveAddrs(ctx context.Context, pi peer.AddrInfo) ([]ma.Multiaddr, error) {
 	proto := ma.ProtocolWithCode(ma.P_P2P).Name
 	p2paddr, err := ma.NewMultiaddr("/" + proto + "/" + pi.ID.Pretty())
 	if err != nil {
@@ -511,7 +513,7 @@ func (h *BasicHost) resolveAddrs(ctx context.Context, pi pstore.PeerInfo) ([]ma.
 			log.Infof("error resolving %s: %s", reqaddr, err)
 		}
 		for _, res := range resaddrs {
-			pi, err := pstore.InfoFromP2pAddr(res)
+			pi, err := peer.AddrInfoFromP2pAddr(res)
 			if err != nil {
 				log.Infof("error parsing %s: %s", res, err)
 			}

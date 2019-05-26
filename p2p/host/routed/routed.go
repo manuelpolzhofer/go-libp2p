@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/libp2p/go-libp2p-core/connmgr"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
 
 	logging "github.com/ipfs/go-log"
 	circuit "github.com/libp2p/go-libp2p-circuit"
-	connmgr "github.com/libp2p/go-libp2p-core/connmgr"
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/peer"
-	proto "github.com/libp2p/go-libp2p-core/protocol"
 	lgbl "github.com/libp2p/go-libp2p-loggables"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+
 	ma "github.com/multiformats/go-multiaddr"
 )
 
@@ -34,7 +34,7 @@ type RoutedHost struct {
 }
 
 type Routing interface {
-	FindPeer(context.Context, peer.ID) (pstore.PeerInfo, error)
+	FindPeer(context.Context, peer.ID) (peer.AddrInfo, error)
 }
 
 func Wrap(h host.Host, r Routing) *RoutedHost {
@@ -46,7 +46,7 @@ func Wrap(h host.Host, r Routing) *RoutedHost {
 //
 // RoutedHost's Connect differs in that if the host has no addresses for a
 // given peer, it will use its routing system to try to find some.
-func (rh *RoutedHost) Connect(ctx context.Context, pi pstore.PeerInfo) error {
+func (rh *RoutedHost) Connect(ctx context.Context, pi peer.AddrInfo) error {
 	// first, check if we're already connected.
 	if rh.Network().Connectedness(pi.ID) == network.Connected {
 		return nil
@@ -54,7 +54,7 @@ func (rh *RoutedHost) Connect(ctx context.Context, pi pstore.PeerInfo) error {
 
 	// if we were given some addresses, keep + use them.
 	if len(pi.Addrs) > 0 {
-		rh.Peerstore().AddAddrs(pi.ID, pi.Addrs, pstore.TempAddrTTL)
+		rh.Peerstore().AddAddrs(pi.ID, pi.Addrs, peerstore.TempAddrTTL)
 	}
 
 	// Check if we have some addresses in our recent memory.
@@ -102,7 +102,7 @@ func (rh *RoutedHost) Connect(ctx context.Context, pi pstore.PeerInfo) error {
 			continue
 		}
 
-		rh.Peerstore().AddAddrs(relayID, relayAddrs, pstore.TempAddrTTL)
+		rh.Peerstore().AddAddrs(relayID, relayAddrs, peerstore.TempAddrTTL)
 	}
 
 	// if we're here, we got some addrs. let's use our wrapped host to connect.
@@ -137,7 +137,7 @@ func (rh *RoutedHost) ID() peer.ID {
 	return rh.host.ID()
 }
 
-func (rh *RoutedHost) Peerstore() pstore.Peerstore {
+func (rh *RoutedHost) Peerstore() peerstore.Peerstore {
 	return rh.host.Peerstore()
 }
 
@@ -153,25 +153,25 @@ func (rh *RoutedHost) Mux() protocol.Switch {
 	return rh.host.Mux()
 }
 
-func (rh *RoutedHost) SetStreamHandler(pid proto.ID, handler network.StreamHandler) {
+func (rh *RoutedHost) SetStreamHandler(pid protocol.ID, handler network.StreamHandler) {
 	rh.host.SetStreamHandler(pid, handler)
 }
 
-func (rh *RoutedHost) SetStreamHandlerMatch(pid proto.ID, m func(string) bool, handler network.StreamHandler) {
+func (rh *RoutedHost) SetStreamHandlerMatch(pid protocol.ID, m func(string) bool, handler network.StreamHandler) {
 	rh.host.SetStreamHandlerMatch(pid, m, handler)
 }
 
-func (rh *RoutedHost) RemoveStreamHandler(pid proto.ID) {
+func (rh *RoutedHost) RemoveStreamHandler(pid protocol.ID) {
 	rh.host.RemoveStreamHandler(pid)
 }
 
-func (rh *RoutedHost) NewStream(ctx context.Context, p peer.ID, pids ...proto.ID) (network.Stream, error) {
+func (rh *RoutedHost) NewStream(ctx context.Context, p peer.ID, pids ...protocol.ID) (network.Stream, error) {
 	// Ensure we have a connection, with peer addresses resolved by the routing system (#207)
 	// It is not sufficient to let the underlying host connect, it will most likely not have
 	// any addresses for the peer without any prior connections.
 	// If the caller wants to prevent the host from dialing, it should use the NoDial option.
 	if nodial, _ := network.GetNoDial(ctx); !nodial {
-		err := rh.Connect(ctx, pstore.PeerInfo{ID: p})
+		err := rh.Connect(ctx, peer.AddrInfo{ID: p})
 		if err != nil {
 			return nil, err
 		}

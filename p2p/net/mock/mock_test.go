@@ -10,15 +10,18 @@ import (
 	"testing"
 	"time"
 
-	detectrace "github.com/ipfs/go-detect-race"
+	ci "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
-	protocol "github.com/libp2p/go-libp2p-core/protocol"
-	testutil "github.com/libp2p/go-testutil"
+	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p-core/test"
+
+	detectrace "github.com/ipfs/go-detect-race"
+	tnet "github.com/libp2p/go-libp2p-testing/net"
 )
 
 func randPeer(t *testing.T) peer.ID {
-	p, err := testutil.RandPeerID()
+	p, err := test.RandPeerID()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,15 +31,15 @@ func randPeer(t *testing.T) peer.ID {
 func TestNetworkSetup(t *testing.T) {
 
 	ctx := context.Background()
-	sk1, _, err := testutil.RandTestKeyPair(512)
+	sk1, _, err := test.RandTestKeyPair(ci.RSA, 512)
 	if err != nil {
 		t.Fatal(t)
 	}
-	sk2, _, err := testutil.RandTestKeyPair(512)
+	sk2, _, err := test.RandTestKeyPair(ci.RSA, 512)
 	if err != nil {
 		t.Fatal(t)
 	}
-	sk3, _, err := testutil.RandTestKeyPair(512)
+	sk3, _, err := test.RandTestKeyPair(ci.RSA, 512)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -45,9 +48,9 @@ func TestNetworkSetup(t *testing.T) {
 
 	// add peers to mock net
 
-	a1 := testutil.RandLocalTCPAddress()
-	a2 := testutil.RandLocalTCPAddress()
-	a3 := testutil.RandLocalTCPAddress()
+	a1 := tnet.RandLocalTCPAddress()
+	a2 := tnet.RandLocalTCPAddress()
+	a3 := tnet.RandLocalTCPAddress()
 
 	h1, err := mn.AddPeer(sk1, a1)
 	if err != nil {
@@ -409,12 +412,12 @@ func TestAdding(t *testing.T) {
 
 	peers := []peer.ID{}
 	for i := 0; i < 3; i++ {
-		sk, _, err := testutil.RandTestKeyPair(512)
+		sk, _, err := test.RandTestKeyPair(ci.RSA, 512)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		a := testutil.RandLocalTCPAddress()
+		a := tnet.RandLocalTCPAddress()
 		h, err := mn.AddPeer(sk, a)
 		if err != nil {
 			t.Fatal(err)

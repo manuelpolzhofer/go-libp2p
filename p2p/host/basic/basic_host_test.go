@@ -9,19 +9,18 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/helpers"
-	testutil "github.com/libp2p/go-testutil"
-
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
-	protocol "github.com/libp2p/go-libp2p-core/protocol"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p-core/test"
+
 	swarmt "github.com/libp2p/go-libp2p-swarm/testing"
 	ma "github.com/multiformats/go-multiaddr"
 	madns "github.com/multiformats/go-multiaddr-dns"
 )
 
 func TestHostSimple(t *testing.T) {
-
 	ctx := context.Background()
 	h1 := New(swarmt.GenSwarm(t, ctx))
 	h2 := New(swarmt.GenSwarm(t, ctx))
@@ -340,11 +339,11 @@ func TestProtoDowngrade(t *testing.T) {
 func TestAddrResolution(t *testing.T) {
 	ctx := context.Background()
 
-	p1, err := testutil.RandPeerID()
+	p1, err := test.RandPeerID()
 	if err != nil {
 		t.Error(err)
 	}
-	p2, err := testutil.RandPeerID()
+	p2, err := test.RandPeerID()
 	if err != nil {
 		t.Error(err)
 	}
@@ -364,7 +363,7 @@ func TestAddrResolution(t *testing.T) {
 	h := New(swarmt.GenSwarm(t, ctx), resolver)
 	defer h.Close()
 
-	pi, err := pstore.InfoFromP2pAddr(p2paddr1)
+	pi, err := peer.AddrInfoFromP2pAddr(p2paddr1)
 	if err != nil {
 		t.Error(err)
 	}

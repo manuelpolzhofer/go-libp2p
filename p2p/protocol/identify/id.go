@@ -5,17 +5,20 @@ import (
 	"sync"
 	"time"
 
+	ic "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/helpers"
+	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peerstore"
+
 	pb "github.com/libp2p/go-libp2p/p2p/protocol/identify/pb"
 
 	ggio "github.com/gogo/protobuf/io"
 	logging "github.com/ipfs/go-log"
-	ic "github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/peer"
+
 	lgbl "github.com/libp2p/go-libp2p-loggables"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+
 	ma "github.com/multiformats/go-multiaddr"
 	msmux "github.com/multiformats/go-multistream"
 )
@@ -284,11 +287,11 @@ func (ids *IDService) consumeMessage(mes *pb.Identify, c network.Conn) {
 	case network.Connected:
 		// invalidate previous addrs -- we use a transient ttl instead of 0 to ensure there
 		// is no period of having no good addrs whatsoever
-		ids.Host.Peerstore().UpdateAddrs(p, pstore.ConnectedAddrTTL, transientTTL)
-		ids.Host.Peerstore().AddAddrs(p, lmaddrs, pstore.ConnectedAddrTTL)
+		ids.Host.Peerstore().UpdateAddrs(p, peerstore.ConnectedAddrTTL, transientTTL)
+		ids.Host.Peerstore().AddAddrs(p, lmaddrs, peerstore.ConnectedAddrTTL)
 	default:
-		ids.Host.Peerstore().UpdateAddrs(p, pstore.ConnectedAddrTTL, transientTTL)
-		ids.Host.Peerstore().AddAddrs(p, lmaddrs, pstore.RecentlyConnectedAddrTTL)
+		ids.Host.Peerstore().UpdateAddrs(p, peerstore.ConnectedAddrTTL, transientTTL)
+		ids.Host.Peerstore().AddAddrs(p, lmaddrs, peerstore.RecentlyConnectedAddrTTL)
 	}
 	ids.addrMu.Unlock()
 
@@ -496,7 +499,7 @@ func (nn *netNotifiee) Disconnected(n network.Network, v network.Conn) {
 	if ids.Host.Network().Connectedness(v.RemotePeer()) != network.Connected {
 		// Last disconnect.
 		ps := ids.Host.Peerstore()
-		ps.UpdateAddrs(v.RemotePeer(), pstore.ConnectedAddrTTL, pstore.RecentlyConnectedAddrTTL)
+		ps.UpdateAddrs(v.RemotePeer(), peerstore.ConnectedAddrTTL, peerstore.RecentlyConnectedAddrTTL)
 	}
 }
 
