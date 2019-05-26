@@ -4,19 +4,20 @@ import (
 	"context"
 	"io"
 	"net"
+	"sync"
 	"time"
 
 	logging "github.com/ipfs/go-log"
 	goprocess "github.com/jbenet/goprocess"
 	goprocessctx "github.com/jbenet/goprocess/context"
-	"github.com/libp2p/go-libp2p-core/protocol"
-	"github.com/libp2p/go-libp2p-core/host"
 	connmgr "github.com/libp2p/go-libp2p-core/connmgr"
-	inat "github.com/libp2p/go-libp2p-nat"
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+	"github.com/libp2p/go-libp2p-core/protocol"
 	proto "github.com/libp2p/go-libp2p-core/protocol"
+	inat "github.com/libp2p/go-libp2p-nat"
+	pstore "github.com/libp2p/go-libp2p-peerstore"
 	identify "github.com/libp2p/go-libp2p/p2p/protocol/identify"
 	ping "github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	ma "github.com/multiformats/go-multiaddr"
@@ -72,6 +73,11 @@ type BasicHost struct {
 	negtimeout time.Duration
 
 	proc goprocess.Process
+
+	ctx       context.Context
+	cancel    func()
+	mx        sync.Mutex
+	lastAddrs []ma.Multiaddr
 }
 
 var _ host.Host = (*BasicHost)(nil)
@@ -111,14 +117,18 @@ type HostOpts struct {
 	EnablePing bool
 }
 
-// NewHost constructs a new *BasicHost and activates it by attaching its stream and connection handlers to the given network.Network.
+// NewHost constructs a new *BasicHost and activates it by attaching its stream and connection handlers to the given inet.Network.
 func NewHost(ctx context.Context, net network.Network, opts *HostOpts) (*BasicHost, error) {
+	bgctx, cancel := context.WithCancel(ctx)
+
 	h := &BasicHost{
 		network:      net,
 		mux:          msmux.NewMultistreamMuxer(),
 		negtimeout:   DefaultNegotiationTimeout,
 		AddrsFactory: DefaultAddrsFactory,
 		maResolver:   madns.DefaultResolver,
+		ctx:          bgctx,
+		cancel:       cancel,
 	}
 
 	h.proc = goprocessctx.WithContextAndTeardown(ctx, func() error {
@@ -136,7 +146,7 @@ func NewHost(ctx context.Context, net network.Network, opts *HostOpts) (*BasicHo
 		h.ids = opts.IdentifyService
 	} else {
 		// we can't set this as a default above because it depends on the *BasicHost.
-		h.ids = identify.NewIDService(ctx, h)
+		h.ids = identify.NewIDService(bgctx, h)
 	}
 
 	if uint64(opts.NegotiationTimeout) != 0 {
@@ -168,6 +178,7 @@ func NewHost(ctx context.Context, net network.Network, opts *HostOpts) (*BasicHo
 
 	net.SetConnHandler(h.newConnHandler)
 	net.SetStreamHandler(h.newStreamHandler)
+
 	return h, nil
 }
 
@@ -208,7 +219,12 @@ func New(net network.Network, opts ...interface{}) *BasicHost {
 	return h
 }
 
-// newConnHandler is the remote-opened conn handler for network.Network
+// Start starts background tasks in the host
+func (h *BasicHost) Start() {
+	go h.background()
+}
+
+// newConnHandler is the remote-opened conn handler for inet.Network
 func (h *BasicHost) newConnHandler(c network.Conn) {
 	// Clear protocols on connecting to new peer to avoid issues caused
 	// by misremembering protocols between reconnects
@@ -267,7 +283,63 @@ func (h *BasicHost) newStreamHandler(s network.Stream) {
 // PushIdentify pushes an identify update through the identify push protocol
 // Warning: this interface is unstable and may disappear in the future.
 func (h *BasicHost) PushIdentify() {
-	h.ids.Push()
+	push := false
+
+	h.mx.Lock()
+	addrs := h.Addrs()
+	if !sameAddrs(addrs, h.lastAddrs) {
+		push = true
+		h.lastAddrs = addrs
+	}
+	h.mx.Unlock()
+
+	if push {
+		h.ids.Push()
+	}
+}
+
+func (h *BasicHost) background() {
+	// periodically schedules an IdentifyPush to update our peers for changes
+	// in our address set (if needed)
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	// initialize lastAddrs
+	h.mx.Lock()
+	if h.lastAddrs == nil {
+		h.lastAddrs = h.Addrs()
+	}
+	h.mx.Unlock()
+
+	for {
+		select {
+		case <-ticker.C:
+			h.PushIdentify()
+
+		case <-h.ctx.Done():
+			return
+		}
+	}
+}
+
+func sameAddrs(a, b []ma.Multiaddr) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	bmap := make(map[string]struct{}, len(b))
+	for _, addr := range b {
+		bmap[string(addr.Bytes())] = struct{}{}
+	}
+
+	for _, addr := range a {
+		_, ok := bmap[string(addr.Bytes())]
+		if !ok {
+			return false
+		}
+	}
+
+	return true
 }
 
 // ID returns the (local) peer.ID associated with this Host
@@ -650,6 +722,8 @@ func (h *BasicHost) AllAddrs() []ma.Multiaddr {
 
 // Close shuts down the Host's services (network, etc).
 func (h *BasicHost) Close() error {
+	h.cancel()
+	h.cmgr.Close()
 	return h.proc.Close()
 }
 

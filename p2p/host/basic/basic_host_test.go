@@ -8,12 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/libp2p/go-libp2p-core/helpers"
 	testutil "github.com/libp2p/go-testutil"
 
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
 	protocol "github.com/libp2p/go-libp2p-core/protocol"
+	pstore "github.com/libp2p/go-libp2p-peerstore"
 	swarmt "github.com/libp2p/go-libp2p-swarm/testing"
 	ma "github.com/multiformats/go-multiaddr"
 	madns "github.com/multiformats/go-multiaddr-dns"
@@ -140,7 +141,7 @@ func TestHostProtoPreference(t *testing.T) {
 	assertWait(t, connectedOn, protoOld)
 	s.Close()
 
-	mfunc, err := host.MultistreamSemverMatcher(protoMinor)
+	mfunc, err := helpers.MultistreamSemverMatcher(protoMinor)
 	if err != nil {
 		t.Fatal(err)
 	}

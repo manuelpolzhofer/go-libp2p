@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"reflect"
 
-	security "github.com/libp2p/go-libp2p-core/sec"
 	crypto "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
-	pnet "github.com/libp2p/go-libp2p-core/pnet"
+	mux "github.com/libp2p/go-libp2p-core/mux"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
-	pstore "github.com/libp2p/go-libp2p-peerstore"
+	pnet "github.com/libp2p/go-libp2p-core/pnet"
+	security "github.com/libp2p/go-libp2p-core/sec"
 	"github.com/libp2p/go-libp2p-core/transport"
+	pstore "github.com/libp2p/go-libp2p-peerstore"
 	tptu "github.com/libp2p/go-libp2p-transport-upgrader"
 	filter "github.com/libp2p/go-maddr-filter"
-	mux "github.com/libp2p/go-libp2p-core/mux"
 )
 
 var (
@@ -22,8 +22,8 @@ var (
 	hostType      = reflect.TypeOf((*host.Host)(nil)).Elem()
 	networkType   = reflect.TypeOf((*network.Network)(nil)).Elem()
 	transportType = reflect.TypeOf((*transport.Transport)(nil)).Elem()
-	muxType       = reflect.TypeOf((*mux.Transport)(nil)).Elem()
-	securityType  = reflect.TypeOf((*security.Transport)(nil)).Elem()
+	muxType       = reflect.TypeOf((*mux.Multiplexer)(nil)).Elem()
+	securityType  = reflect.TypeOf((*security.SecureTransport)(nil)).Elem()
 	protectorType = reflect.TypeOf((*pnet.Protector)(nil)).Elem()
 	privKeyType   = reflect.TypeOf((*crypto.PrivKey)(nil)).Elem()
 	pubKeyType    = reflect.TypeOf((*crypto.PubKey)(nil)).Elem()

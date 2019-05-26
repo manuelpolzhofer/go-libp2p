@@ -11,10 +11,10 @@ import (
 	bhost "github.com/libp2p/go-libp2p/p2p/host/basic"
 
 	circuit "github.com/libp2p/go-libp2p-circuit"
-	crypto "github.com/libp2p/go-libp2p-core/crypto"
 	connmgr "github.com/libp2p/go-libp2p-core/connmgr"
-	pnet "github.com/libp2p/go-libp2p-core/pnet"
+	crypto "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/metrics"
+	pnet "github.com/libp2p/go-libp2p-core/pnet"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	filter "github.com/libp2p/go-maddr-filter"
 	ma "github.com/multiformats/go-multiaddr"

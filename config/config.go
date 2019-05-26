@@ -10,14 +10,14 @@ import (
 
 	logging "github.com/ipfs/go-log"
 	circuit "github.com/libp2p/go-libp2p-circuit"
-	crypto "github.com/libp2p/go-libp2p-core/crypto"
-	discovery "github.com/libp2p/go-libp2p-discovery"
-	"github.com/libp2p/go-libp2p-core/host"
 	connmgr "github.com/libp2p/go-libp2p-core/connmgr"
-	pnet "github.com/libp2p/go-libp2p-core/pnet"
+	crypto "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/metrics"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	pnet "github.com/libp2p/go-libp2p-core/pnet"
+	discovery "github.com/libp2p/go-libp2p-discovery"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	routing "github.com/libp2p/go-libp2p-routing"
 	swarm "github.com/libp2p/go-libp2p-swarm"
@@ -228,6 +228,9 @@ func (cfg *Config) NewNode(ctx context.Context) (host.Host, error) {
 		}
 	}
 
+	// start the host background tasks
+	h.Start()
+
 	if router != nil {
 		return routed.Wrap(h, router), nil
 	}
@@ -242,6 +245,9 @@ type Option func(cfg *Config) error
 // encountered (if any).
 func (cfg *Config) Apply(opts ...Option) error {
 	for _, opt := range opts {
+		if opt == nil {
+			continue
+		}
 		if err := opt(cfg); err != nil {
 			return err
 		}

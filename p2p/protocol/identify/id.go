@@ -5,15 +5,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/libp2p/go-libp2p-core/helpers"
 	pb "github.com/libp2p/go-libp2p/p2p/protocol/identify/pb"
 
 	ggio "github.com/gogo/protobuf/io"
 	logging "github.com/ipfs/go-log"
 	ic "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
-	lgbl "github.com/libp2p/go-libp2p-loggables"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	lgbl "github.com/libp2p/go-libp2p-loggables"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	ma "github.com/multiformats/go-multiaddr"
 	msmux "github.com/multiformats/go-multistream"
@@ -33,6 +34,9 @@ const LibP2PVersion = "ipfs/0.1.0"
 
 var ClientVersion = "go-libp2p/3.3.4"
 
+// transientTTL is a short ttl for invalidated previously connected addrs
+const transientTTL = 10 * time.Second
+
 // IDService is a structure that implements ProtocolIdentify.
 // It is a trivial service that gives the other peer some
 // useful information about the local peer. A sort of hello.
@@ -43,6 +47,8 @@ var ClientVersion = "go-libp2p/3.3.4"
 //  * Our public Listen Addresses
 type IDService struct {
 	Host host.Host
+
+	ctx context.Context
 
 	// connections undergoing identification
 	// for wait purposes
@@ -61,6 +67,7 @@ type IDService struct {
 func NewIDService(ctx context.Context, h host.Host) *IDService {
 	s := &IDService{
 		Host:          h,
+		ctx:           ctx,
 		currid:        make(map[network.Conn]chan struct{}),
 		observedAddrs: NewObservedAddrSet(ctx),
 	}
@@ -119,7 +126,7 @@ func (ids *IDService) IdentifyConn(c network.Conn) {
 }
 
 func (ids *IDService) requestHandler(s network.Stream) {
-	defer network.FullClose(s)
+	defer helpers.FullClose(s)
 	c := s.Conn()
 
 	w := ggio.NewDelimitedWriter(s)
@@ -145,7 +152,7 @@ func (ids *IDService) responseHandler(s network.Stream) {
 	log.Debugf("%s received message from %s %s", ID,
 		c.RemotePeer(), c.RemoteMultiaddr())
 
-	go network.FullClose(s)
+	go helpers.FullClose(s)
 }
 
 func (ids *IDService) pushHandler(s network.Stream) {
@@ -153,19 +160,42 @@ func (ids *IDService) pushHandler(s network.Stream) {
 }
 
 func (ids *IDService) Push() {
+	var wg sync.WaitGroup
+
+	ctx, cancel := context.WithTimeout(ids.ctx, 30*time.Second)
+	ctx = network.WithNoDial(ctx, "identify push")
+
 	for _, p := range ids.Host.Network().Peers() {
+		wg.Add(1)
 		go func(p peer.ID) {
-			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-			defer cancel()
+			defer wg.Done()
+
 			s, err := ids.Host.NewStream(ctx, p, IDPush)
 			if err != nil {
-				log.Debugf("error opening push stream: %s", err.Error())
+				log.Debugf("error opening push stream to %s: %s", p, err.Error())
 				return
 			}
 
-			ids.requestHandler(s)
+			rch := make(chan struct{}, 1)
+			go func() {
+				ids.requestHandler(s)
+				rch <- struct{}{}
+			}()
+
+			select {
+			case <-rch:
+			case <-ctx.Done():
+				// this is taking too long, abort!
+				s.Reset()
+			}
 		}(p)
 	}
+
+	// this supervisory goroutine is necessary to cancel the context
+	go func() {
+		wg.Wait()
+		cancel()
+	}()
 }
 
 func (ids *IDService) populateMessage(mes *pb.Identify, c network.Conn) {
@@ -252,8 +282,12 @@ func (ids *IDService) consumeMessage(mes *pb.Identify, c network.Conn) {
 	ids.addrMu.Lock()
 	switch ids.Host.Network().Connectedness(p) {
 	case network.Connected:
+		// invalidate previous addrs -- we use a transient ttl instead of 0 to ensure there
+		// is no period of having no good addrs whatsoever
+		ids.Host.Peerstore().UpdateAddrs(p, pstore.ConnectedAddrTTL, transientTTL)
 		ids.Host.Peerstore().AddAddrs(p, lmaddrs, pstore.ConnectedAddrTTL)
 	default:
+		ids.Host.Peerstore().UpdateAddrs(p, pstore.ConnectedAddrTTL, transientTTL)
 		ids.Host.Peerstore().AddAddrs(p, lmaddrs, pstore.RecentlyConnectedAddrTTL)
 	}
 	ids.addrMu.Unlock()
@@ -468,8 +502,8 @@ func (nn *netNotifiee) Disconnected(n network.Network, v network.Conn) {
 
 func (nn *netNotifiee) OpenedStream(n network.Network, v network.Stream) {}
 func (nn *netNotifiee) ClosedStream(n network.Network, v network.Stream) {}
-func (nn *netNotifiee) Listen(n network.Network, a ma.Multiaddr)      {}
-func (nn *netNotifiee) ListenClose(n network.Network, a ma.Multiaddr) {}
+func (nn *netNotifiee) Listen(n network.Network, a ma.Multiaddr)         {}
+func (nn *netNotifiee) ListenClose(n network.Network, a ma.Multiaddr)    {}
 
 func logProtocolMismatchDisconnect(c network.Conn, protocol, agent string) {
 	lm := make(lgbl.DeferredMap)

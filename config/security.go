@@ -28,15 +28,15 @@ var securityArgTypes = newArgTypeSet(
 
 // SecurityConstructor creates a security constructor from the passed parameter
 // using reflection.
-func SecurityConstructor(sec interface{}) (SecC, error) {
+func SecurityConstructor(security interface{}) (SecC, error) {
 	// Already constructed?
-	if t, ok := sec.(sec.SecureTransport); ok {
+	if t, ok := security.(sec.SecureTransport); ok {
 		return func(_ host.Host) (sec.SecureTransport, error) {
 			return t, nil
 		}, nil
 	}
 
-	ctor, err := makeConstructor(sec, securityType, securityArgTypes)
+	ctor, err := makeConstructor(security, securityType, securityArgTypes)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func SecurityConstructor(sec interface{}) (SecC, error) {
 	}, nil
 }
 
-func makeInsecureTransport(id peer.ID) sec.SecureTransport{
+func makeInsecureTransport(id peer.ID) sec.SecureTransport {
 	secMuxer := new(csms.SSMuxer)
 	secMuxer.AddTransport(insecure.ID, insecure.New(id))
 	return secMuxer

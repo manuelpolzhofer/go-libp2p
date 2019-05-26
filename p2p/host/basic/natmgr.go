@@ -7,8 +7,8 @@ import (
 
 	goprocess "github.com/jbenet/goprocess"
 	goprocessctx "github.com/jbenet/goprocess/context"
-	inat "github.com/libp2p/go-libp2p-nat"
 	"github.com/libp2p/go-libp2p-core/network"
+	inat "github.com/libp2p/go-libp2p-nat"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
