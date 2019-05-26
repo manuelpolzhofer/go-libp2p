@@ -7,7 +7,7 @@ import (
 
 	bhost "github.com/libp2p/go-libp2p/p2p/host/basic"
 
-	host "github.com/libp2p/go-libp2p-host"
+	"github.com/libp2p/go-libp2p-core/host"
 	swarmt "github.com/libp2p/go-libp2p-swarm/testing"
 
 	pstore "github.com/libp2p/go-libp2p-peerstore"

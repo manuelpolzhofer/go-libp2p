@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	crypto "github.com/libp2p/go-libp2p-crypto"
-	host "github.com/libp2p/go-libp2p-host"
+	crypto "github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/host"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	"github.com/libp2p/go-tcp-transport"
 )

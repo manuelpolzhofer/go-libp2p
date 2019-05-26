@@ -10,10 +10,10 @@ import (
 
 	testutil "github.com/libp2p/go-testutil"
 
-	host "github.com/libp2p/go-libp2p-host"
-	inet "github.com/libp2p/go-libp2p-net"
+	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
-	protocol "github.com/libp2p/go-libp2p-protocol"
+	protocol "github.com/libp2p/go-libp2p-core/protocol"
 	swarmt "github.com/libp2p/go-libp2p-swarm/testing"
 	ma "github.com/multiformats/go-multiaddr"
 	madns "github.com/multiformats/go-multiaddr-dns"
@@ -33,7 +33,7 @@ func TestHostSimple(t *testing.T) {
 	}
 
 	piper, pipew := io.Pipe()
-	h2.SetStreamHandler(protocol.TestingID, func(s inet.Stream) {
+	h2.SetStreamHandler(protocol.TestingID, func(s network.Stream) {
 		defer s.Close()
 		w := io.MultiWriter(s, pipew)
 		io.Copy(w, s) // mirror everything
@@ -125,7 +125,7 @@ func TestHostProtoPreference(t *testing.T) {
 
 	connectedOn := make(chan protocol.ID)
 
-	handler := func(s inet.Stream) {
+	handler := func(s network.Stream) {
 		connectedOn <- s.Protocol()
 		s.Close()
 	}
@@ -180,7 +180,7 @@ func TestHostProtoMismatch(t *testing.T) {
 	defer h1.Close()
 	defer h2.Close()
 
-	h1.SetStreamHandler("/super", func(s inet.Stream) {
+	h1.SetStreamHandler("/super", func(s network.Stream) {
 		t.Error("shouldnt get here")
 		s.Reset()
 	})
@@ -199,7 +199,7 @@ func TestHostProtoPreknowledge(t *testing.T) {
 	h2 := New(swarmt.GenSwarm(t, ctx))
 
 	conn := make(chan protocol.ID)
-	handler := func(s inet.Stream) {
+	handler := func(s network.Stream) {
 		conn <- s.Protocol()
 		s.Close()
 	}
@@ -258,7 +258,7 @@ func TestNewDialOld(t *testing.T) {
 	defer h2.Close()
 
 	connectedOn := make(chan protocol.ID)
-	h1.SetStreamHandler("/testing", func(s inet.Stream) {
+	h1.SetStreamHandler("/testing", func(s network.Stream) {
 		connectedOn <- s.Protocol()
 		s.Close()
 	})
@@ -286,7 +286,7 @@ func TestProtoDowngrade(t *testing.T) {
 	defer h2.Close()
 
 	connectedOn := make(chan protocol.ID)
-	h1.SetStreamHandler("/testing/1.0.0", func(s inet.Stream) {
+	h1.SetStreamHandler("/testing/1.0.0", func(s network.Stream) {
 		connectedOn <- s.Protocol()
 		s.Close()
 	})
@@ -307,7 +307,7 @@ func TestProtoDowngrade(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 50) // allow notifications to propogate
 	h1.RemoveStreamHandler("/testing/1.0.0")
-	h1.SetStreamHandler("/testing", func(s inet.Stream) {
+	h1.SetStreamHandler("/testing", func(s network.Stream) {
 		connectedOn <- s.Protocol()
 		s.Close()
 	})

@@ -15,9 +15,9 @@ import (
 	autonat "github.com/libp2p/go-libp2p-autonat"
 	autonatpb "github.com/libp2p/go-libp2p-autonat/pb"
 	circuit "github.com/libp2p/go-libp2p-circuit"
-	host "github.com/libp2p/go-libp2p-host"
-	inet "github.com/libp2p/go-libp2p-net"
-	peer "github.com/libp2p/go-libp2p-peer"
+	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	routing "github.com/libp2p/go-libp2p-routing"
 	ma "github.com/multiformats/go-multiaddr"
@@ -105,7 +105,7 @@ func makeAutoNATServicePrivate(ctx context.Context, t *testing.T) host.Host {
 	return h
 }
 
-func sayAutoNATPrivate(s inet.Stream) {
+func sayAutoNATPrivate(s network.Stream) {
 	defer s.Close()
 	w := ggio.NewDelimitedWriter(s)
 	res := autonatpb.Message{

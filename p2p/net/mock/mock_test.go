@@ -11,9 +11,9 @@ import (
 	"time"
 
 	detectrace "github.com/ipfs/go-detect-race"
-	inet "github.com/libp2p/go-libp2p-net"
-	peer "github.com/libp2p/go-libp2p-peer"
-	protocol "github.com/libp2p/go-libp2p-protocol"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
+	protocol "github.com/libp2p/go-libp2p-core/protocol"
 	testutil "github.com/libp2p/go-testutil"
 )
 
@@ -278,7 +278,7 @@ func TestStreams(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := func(s inet.Stream) {
+	handler := func(s network.Stream) {
 		b := make([]byte, 4)
 		if _, err := io.ReadFull(s, b); err != nil {
 			panic(err)
@@ -315,8 +315,8 @@ func TestStreams(t *testing.T) {
 
 }
 
-func makePinger(st string, n int) func(inet.Stream) {
-	return func(s inet.Stream) {
+func makePinger(st string, n int) func(network.Stream) {
+	return func(s network.Stream) {
 		go func() {
 			defer s.Close()
 
@@ -336,8 +336,8 @@ func makePinger(st string, n int) func(inet.Stream) {
 	}
 }
 
-func makePonger(st string) func(inet.Stream) {
-	return func(s inet.Stream) {
+func makePonger(st string) func(network.Stream) {
+	return func(s network.Stream) {
 		go func() {
 			defer s.Close()
 
@@ -440,7 +440,7 @@ func TestAdding(t *testing.T) {
 	if h2 == nil {
 		t.Fatalf("no host for %s", p2)
 	}
-	h2.SetStreamHandler(protocol.TestingID, func(s inet.Stream) {
+	h2.SetStreamHandler(protocol.TestingID, func(s network.Stream) {
 		defer s.Close()
 
 		b := make([]byte, 4)
@@ -535,7 +535,7 @@ func TestLimitedStreams(t *testing.T) {
 	var wg sync.WaitGroup
 	messages := 4
 	messageSize := 500
-	handler := func(s inet.Stream) {
+	handler := func(s network.Stream) {
 		b := make([]byte, messageSize)
 		for i := 0; i < messages; i++ {
 			if _, err := io.ReadFull(s, b); err != nil {
@@ -619,7 +619,7 @@ func TestStreamsWithLatency(t *testing.T) {
 	// we'll write once to a single stream
 	wg.Add(1)
 
-	handler := func(s inet.Stream) {
+	handler := func(s network.Stream) {
 		b := make([]byte, mln)
 
 		if _, err := io.ReadFull(s, b); err != nil {

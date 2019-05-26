@@ -10,14 +10,14 @@ import (
 
 	logging "github.com/ipfs/go-log"
 	circuit "github.com/libp2p/go-libp2p-circuit"
-	crypto "github.com/libp2p/go-libp2p-crypto"
+	crypto "github.com/libp2p/go-libp2p-core/crypto"
 	discovery "github.com/libp2p/go-libp2p-discovery"
-	host "github.com/libp2p/go-libp2p-host"
-	ifconnmgr "github.com/libp2p/go-libp2p-interface-connmgr"
-	pnet "github.com/libp2p/go-libp2p-interface-pnet"
-	metrics "github.com/libp2p/go-libp2p-metrics"
-	inet "github.com/libp2p/go-libp2p-net"
-	peer "github.com/libp2p/go-libp2p-peer"
+	"github.com/libp2p/go-libp2p-core/host"
+	connmgr "github.com/libp2p/go-libp2p-core/connmgr"
+	pnet "github.com/libp2p/go-libp2p-core/pnet"
+	"github.com/libp2p/go-libp2p-core/metrics"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	routing "github.com/libp2p/go-libp2p-routing"
 	swarm "github.com/libp2p/go-libp2p-swarm"
@@ -33,7 +33,7 @@ var log = logging.Logger("p2p-config")
 type AddrsFactory = bhost.AddrsFactory
 
 // NATManagerC is a NATManager constructor.
-type NATManagerC func(inet.Network) bhost.NATManager
+type NATManagerC func(network.Network) bhost.NATManager
 
 type RoutingC func(host.Host) (routing.PeerRouting, error)
 
@@ -58,7 +58,7 @@ type Config struct {
 	AddrsFactory bhost.AddrsFactory
 	Filters      *filter.Filters
 
-	ConnManager ifconnmgr.ConnManager
+	ConnManager connmgr.ConnManager
 	NATManager  NATManagerC
 	Peerstore   pstore.Peerstore
 	Reporter    metrics.Reporter

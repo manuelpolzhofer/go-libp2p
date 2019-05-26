@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/protocol"
-	host "github.com/libp2p/go-libp2p-host"
+	"github.com/libp2p/go-libp2p-core/host"
 
 	logging "github.com/ipfs/go-log"
 	circuit "github.com/libp2p/go-libp2p-circuit"
-	ifconnmgr "github.com/libp2p/go-libp2p-interface-connmgr"
+	connmgr "github.com/libp2p/go-libp2p-core/connmgr"
 	lgbl "github.com/libp2p/go-libp2p-loggables"
-	inet "github.com/libp2p/go-libp2p-net"
-	peer "github.com/libp2p/go-libp2p-peer"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
-	proto "github.com/libp2p/go-libp2p-protocol"
+	proto "github.com/libp2p/go-libp2p-core/protocol"
 	ma "github.com/multiformats/go-multiaddr"
 )
 
@@ -48,7 +48,7 @@ func Wrap(h host.Host, r Routing) *RoutedHost {
 // given peer, it will use its routing system to try to find some.
 func (rh *RoutedHost) Connect(ctx context.Context, pi pstore.PeerInfo) error {
 	// first, check if we're already connected.
-	if rh.Network().Connectedness(pi.ID) == inet.Connected {
+	if rh.Network().Connectedness(pi.ID) == network.Connected {
 		return nil
 	}
 
@@ -145,7 +145,7 @@ func (rh *RoutedHost) Addrs() []ma.Multiaddr {
 	return rh.host.Addrs()
 }
 
-func (rh *RoutedHost) Network() inet.Network {
+func (rh *RoutedHost) Network() network.Network {
 	return rh.host.Network()
 }
 
@@ -153,11 +153,11 @@ func (rh *RoutedHost) Mux() protocol.Switch {
 	return rh.host.Mux()
 }
 
-func (rh *RoutedHost) SetStreamHandler(pid proto.ID, handler inet.StreamHandler) {
+func (rh *RoutedHost) SetStreamHandler(pid proto.ID, handler network.StreamHandler) {
 	rh.host.SetStreamHandler(pid, handler)
 }
 
-func (rh *RoutedHost) SetStreamHandlerMatch(pid proto.ID, m func(string) bool, handler inet.StreamHandler) {
+func (rh *RoutedHost) SetStreamHandlerMatch(pid proto.ID, m func(string) bool, handler network.StreamHandler) {
 	rh.host.SetStreamHandlerMatch(pid, m, handler)
 }
 
@@ -165,12 +165,12 @@ func (rh *RoutedHost) RemoveStreamHandler(pid proto.ID) {
 	rh.host.RemoveStreamHandler(pid)
 }
 
-func (rh *RoutedHost) NewStream(ctx context.Context, p peer.ID, pids ...proto.ID) (inet.Stream, error) {
+func (rh *RoutedHost) NewStream(ctx context.Context, p peer.ID, pids ...proto.ID) (network.Stream, error) {
 	// Ensure we have a connection, with peer addresses resolved by the routing system (#207)
 	// It is not sufficient to let the underlying host connect, it will most likely not have
 	// any addresses for the peer without any prior connections.
 	// If the caller wants to prevent the host from dialing, it should use the NoDial option.
-	if nodial, _ := inet.GetNoDial(ctx); !nodial {
+	if nodial, _ := network.GetNoDial(ctx); !nodial {
 		err := rh.Connect(ctx, pstore.PeerInfo{ID: p})
 		if err != nil {
 			return nil, err
@@ -183,7 +183,7 @@ func (rh *RoutedHost) Close() error {
 	// no need to close IpfsRouting. we dont own it.
 	return rh.host.Close()
 }
-func (rh *RoutedHost) ConnManager() ifconnmgr.ConnManager {
+func (rh *RoutedHost) ConnManager() connmgr.ConnManager {
 	return rh.host.ConnManager()
 }
 

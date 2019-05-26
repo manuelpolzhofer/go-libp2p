@@ -3,15 +3,16 @@ package config
 import (
 	"fmt"
 
-	security "github.com/libp2p/go-conn-security"
+	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/sec"
+	"github.com/libp2p/go-libp2p-core/sec/insecure"
+
 	csms "github.com/libp2p/go-conn-security-multistream"
-	insecure "github.com/libp2p/go-conn-security/insecure"
-	host "github.com/libp2p/go-libp2p-host"
-	peer "github.com/libp2p/go-libp2p-peer"
 )
 
 // SecC is a security transport constructor
-type SecC func(h host.Host) (security.Transport, error)
+type SecC func(h host.Host) (sec.SecureTransport, error)
 
 // MsSecC is a tuple containing a security transport constructor and a protocol
 // ID.
@@ -29,8 +30,8 @@ var securityArgTypes = newArgTypeSet(
 // using reflection.
 func SecurityConstructor(sec interface{}) (SecC, error) {
 	// Already constructed?
-	if t, ok := sec.(security.Transport); ok {
-		return func(_ host.Host) (security.Transport, error) {
+	if t, ok := sec.(sec.SecureTransport); ok {
+		return func(_ host.Host) (sec.SecureTransport, error) {
 			return t, nil
 		}, nil
 	}
@@ -39,22 +40,22 @@ func SecurityConstructor(sec interface{}) (SecC, error) {
 	if err != nil {
 		return nil, err
 	}
-	return func(h host.Host) (security.Transport, error) {
+	return func(h host.Host) (sec.SecureTransport, error) {
 		t, err := ctor(h, nil)
 		if err != nil {
 			return nil, err
 		}
-		return t.(security.Transport), nil
+		return t.(sec.SecureTransport), nil
 	}, nil
 }
 
-func makeInsecureTransport(id peer.ID) security.Transport {
+func makeInsecureTransport(id peer.ID) sec.SecureTransport{
 	secMuxer := new(csms.SSMuxer)
 	secMuxer.AddTransport(insecure.ID, insecure.New(id))
 	return secMuxer
 }
 
-func makeSecurityTransport(h host.Host, tpts []MsSecC) (security.Transport, error) {
+func makeSecurityTransport(h host.Host, tpts []MsSecC) (sec.SecureTransport, error) {
 	secMuxer := new(csms.SSMuxer)
 	transportSet := make(map[string]struct{}, len(tpts))
 	for _, tptC := range tpts {

@@ -12,8 +12,8 @@ import (
 	autonat "github.com/libp2p/go-libp2p-autonat"
 	_ "github.com/libp2p/go-libp2p-circuit"
 	discovery "github.com/libp2p/go-libp2p-discovery"
-	inet "github.com/libp2p/go-libp2p-net"
-	peer "github.com/libp2p/go-libp2p-peer"
+	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
 	pstore "github.com/libp2p/go-libp2p-peerstore"
 	routing "github.com/libp2p/go-libp2p-routing"
 	ma "github.com/multiformats/go-multiaddr"
@@ -260,17 +260,17 @@ func shuffleRelays(pis []pstore.PeerInfo) {
 	}
 }
 
-func (ar *AutoRelay) Listen(inet.Network, ma.Multiaddr)      {}
-func (ar *AutoRelay) ListenClose(inet.Network, ma.Multiaddr) {}
-func (ar *AutoRelay) Connected(inet.Network, inet.Conn)      {}
+func (ar *AutoRelay) Listen(network.Network, ma.Multiaddr)      {}
+func (ar *AutoRelay) ListenClose(network.Network, ma.Multiaddr) {}
+func (ar *AutoRelay) Connected(network.Network, network.Conn)      {}
 
-func (ar *AutoRelay) Disconnected(net inet.Network, c inet.Conn) {
+func (ar *AutoRelay) Disconnected(net network.Network, c network.Conn) {
 	p := c.RemotePeer()
 
 	ar.mx.Lock()
 	defer ar.mx.Unlock()
 
-	if ar.host.Network().Connectedness(p) == inet.Connected {
+	if ar.host.Network().Connectedness(p) == network.Connected {
 		// We have a second connection.
 		return
 	}
@@ -284,5 +284,5 @@ func (ar *AutoRelay) Disconnected(net inet.Network, c inet.Conn) {
 	}
 }
 
-func (ar *AutoRelay) OpenedStream(inet.Network, inet.Stream) {}
-func (ar *AutoRelay) ClosedStream(inet.Network, inet.Stream) {}
+func (ar *AutoRelay) OpenedStream(network.Network, network.Stream) {}
+func (ar *AutoRelay) ClosedStream(network.Network, network.Stream) {}
